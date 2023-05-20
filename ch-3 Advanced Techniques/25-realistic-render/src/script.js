@@ -30,6 +30,8 @@ const updateAllMaterial = function () {
     if (child instanceof THREE.Mesh && THREE.MeshStandardMaterial) {
       //   child.material.envMap = environmentMap;
       child.material.envMapIntensity = debugObject.envMapIntensity;
+      child.castShadow = true;
+      child.receiveShadow = true;
     }
   });
 };
@@ -60,10 +62,10 @@ gui
 /**
  * Models
  */
-gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
-  gltf.scene.scale.set(10, 10, 10);
-  gltf.scene.position.set(0, -4, 0);
-  gltf.scene.rotation.y = Math.PI * 0.5;
+
+gltfLoader.load("/models/hamburger.glb", (gltf) => {
+  gltf.scene.scale.set(0.3, 0.3, 0.3);
+  gltf.scene.position.set(0, -1, 0);
   scene.add(gltf.scene);
   gui
     .add(gltf.scene.rotation, "y")
@@ -74,13 +76,37 @@ gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
 
   updateAllMaterial();
 });
+// gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
+//   gltf.scene.scale.set(10, 10, 10);
+//   gltf.scene.position.set(0, -4, 0);
+//   gltf.scene.rotation.y = Math.PI * 0.5;
+//   scene.add(gltf.scene);
+//   gui
+//     .add(gltf.scene.rotation, "y")
+//     .min(-Math.PI)
+//     .max(Math.PI)
+//     .step(0.001)
+//     .name("rotation");
+
+//   updateAllMaterial();
+// });
 
 /**
  * Light
  */
 const directionalLight = new THREE.DirectionalLight("white", 3);
 directionalLight.position.set(0.25, 3, -2.25);
+directionalLight.castShadow = true;
+directionalLight.shadow.camera.far = 15;
+directionalLight.shadow.mapSize.set(1024, 1024);
+directionalLight.shadow.normalBias = 0.05;
 scene.add(directionalLight);
+
+const directionalLightHelper = new THREE.CameraHelper(
+  directionalLight.shadow.camera
+);
+scene.add(directionalLightHelper);
+
 gui
   .add(directionalLight, "intensity")
   .min(0)
@@ -150,13 +176,16 @@ controls.enableDamping = true;
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
+  antialias: true,
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.physicallyCorrectLights = true;
 renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.NoToneMapping;
+renderer.toneMapping = THREE.ReinhardToneMapping;
 renderer.toneMappingExposure = 3;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 gui.add(renderer, "toneMapping", {
   No: THREE.NoToneMapping,
